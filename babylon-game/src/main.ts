@@ -77,6 +77,38 @@ for (let i = 0; i < 25; i++) {
   const beach = MeshBuilder.CreateSphere('shore_' + i, { diameter: 1, segments: 10 }, scene);
   beach.scaling = new Vector3(scale * 2, 1.15, scale * 1.4); beach.position = new Vector3(x, -10, z); beach.material = sandMat; beach.parent = islandRoot;
 }
+const desertMat = material('desertDunes', new Color3(0.82, 0.56, 0.28));
+const iceMat = material('glacierIce', new Color3(0.62, 0.86, 0.96), 0.32);
+const frontierMat = material('frontierCrystal', new Color3(0.22, 0.54, 0.8), 0.25);
+frontierMat.emissiveColor = new Color3(0.03, 0.12, 0.2);
+const desertProps: Mesh[] = [];
+const glacierProps: Mesh[] = [];
+const frontierProps: Mesh[] = [];
+for (let i = 0; i < 9; i++) {
+  const dune = MeshBuilder.CreateSphere('desertDune_' + i, { diameter: 1, segments: 8 }, scene);
+  dune.scaling = new Vector3(11 + (i % 3) * 4, 1.8 + (i % 2), 7 + (i % 4) * 2);
+  dune.position = new Vector3(Math.sin(i * 1.8) * 46, -7.5, -75 - i * 82);
+  dune.material = desertMat; dune.parent = islandRoot; desertProps.push(dune);
+  const peak = MeshBuilder.CreateCylinder('icePeak_' + i, { height: 16 + (i % 4) * 5, diameterTop: 0.2, diameterBottom: 11 + (i % 3) * 3, tessellation: 6 }, scene);
+  peak.position = new Vector3(Math.cos(i * 2.1) * 42, -1, -65 - i * 76);
+  peak.material = iceMat; peak.parent = islandRoot; glacierProps.push(peak);
+  const tower = MeshBuilder.CreateBox('frontierTower_' + i, { width: 2.2 + (i % 3), height: 9 + (i % 4) * 3, depth: 2.2 + (i % 2) }, scene);
+  tower.position = new Vector3(Math.sin(i * 2.5) * 48, -4, -70 - i * 84);
+  tower.material = frontierMat; tower.parent = islandRoot; frontierProps.push(tower);
+}
+function setRegionVisuals(region: Region) {
+  setRegionVisuals(region);
+  const desert = region.id === 'desert', glacier = region.id === 'glacier', frontier = region.id === 'frontier';
+  desertProps.forEach(mesh => mesh.setEnabled(desert));
+  glacierProps.forEach(mesh => mesh.setEnabled(glacier));
+  frontierProps.forEach(mesh => mesh.setEnabled(frontier));
+  oceanMat.diffuseColor = glacier ? new Color3(0.12, 0.34, 0.48) : frontier ? new Color3(0.035, 0.12, 0.3) : new Color3(0.035, 0.32, 0.48);
+  sandMat.diffuseColor = glacier ? new Color3(0.7, 0.84, 0.88) : desert ? new Color3(0.88, 0.72, 0.47) : new Color3(0.77, 0.69, 0.45);
+  const sky = desert ? new Color3(0.82, 0.65, 0.48) : glacier ? new Color3(0.55, 0.75, 0.87) : frontier ? new Color3(0.13, 0.22, 0.43) : new Color3(0.48, 0.75, 0.92);
+  scene.clearColor = new Color4(sky.r, sky.g, sky.b, 1);
+  scene.fogColor = sky;
+  scene.fogDensity = frontier ? 0.0025 : 0.0018;
+}
 for (let i = 0; i < 24; i++) {
   const cloud = MeshBuilder.CreateSphere('cloud_' + i, { diameter: 1, segments: 8 }, scene);
   const a = i * 2.17; cloud.position = new Vector3(Math.sin(a) * (65 + i * 5), 15 + (i % 6) * 4, -25 - i * 40);
@@ -207,6 +239,7 @@ upgradeBtn.addEventListener('click', () => {
 });
 function startFlight() {
   inFlight = true; distance = 0; passed = 0; steer = 0; lift = 0;
+  ringProgress.style.width = '0%'; ringLabel.textContent = 'ROUTE RINGS · 0/6';
   aircraftRoot.position.set(0, 3, 0);
   for (let i = 0; i < rings.length; i++) {
     rings[i].position.set(Math.sin(i * 1.4) * 10, 4 + (i % 3) * 2, -65 - i * 65); rings[i].setEnabled(true);
@@ -268,7 +301,7 @@ canvas.addEventListener('pointermove', e => {
 });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 renderMenu();
-islandMaterial.diffuseColor = selectedRegion().color.clone();
+setRegionVisuals(selectedRegion());
 loadingOverlay.classList.add('done');
 void loadAircraft(save.selectedAircraft).then(() => { /* initial aircraft is ready */ });
 
