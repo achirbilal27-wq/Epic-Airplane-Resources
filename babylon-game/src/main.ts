@@ -8,7 +8,7 @@ import './style.css';
 
 type Aircraft = { id: string; name: string; file: string; cost: number; speed: number; handling: number; description: string };
 type Region = { id: string; name: string; subtitle: string; emoji: string; unlockAt: number; reward: number; color: Color3 };
-type SaveData = { coins: number; selectedAircraft: string; selectedRegion: string; owned: string[]; upgrades: number; missions: string[]; bestDistance: number };
+type SaveData = { coins: number; selectedAircraft: string; selectedRegion: string; owned: string[]; upgrades: number; missions: string[]; flightsCompleted: number; bestDistance: number };
 const AIRCRAFT: Aircraft[] = [
   { id: 'comet', name: 'Comet Scout', file: 'dae_stylized_plane_comet_88.glb', cost: 0, speed: 1, handling: 1, description: 'Balanced explorer' },
   { id: 'haul', name: 'Cargo Runner', file: 'medium_haul_plane_low_poly.glb', cost: 180, speed: 0.88, handling: 0.78, description: 'Heavy-duty flight' },
@@ -24,7 +24,7 @@ const REGIONS: Region[] = [
 ];
 const ASSET_BASE = 'https://raw.githubusercontent.com/achirbilal27-wq/Epic-Airplane-Resources/main/Assets/Models/GLB/';
 const SAVE_KEY = 'epic-airplane-sky-frontier-v1';
-const freshSave = (): SaveData => ({ coins: 120, selectedAircraft: 'comet', selectedRegion: 'island', owned: ['comet'], upgrades: 0, missions: [], bestDistance: 0 });
+const freshSave = (): SaveData => ({ coins: 120, selectedAircraft: 'comet', selectedRegion: 'island', owned: ['comet'], upgrades: 0, missions: [], flightsCompleted: 0, bestDistance: 0 });
 function loadSave(): SaveData {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
@@ -191,7 +191,7 @@ let inFlight = false, steer = 0, lift = 0, boosted = false, distance = 0, passed
 let pointerDown = false, lastX = 0, lastY = 0;
 const keys = new Set<string>();
 function showToast(message: string) { toast.textContent = message; toast.classList.add('show'); toastTimer = performance.now() + 2600; }
-function unlockedRegion(region: Region) { return save.missions.length >= region.unlockAt; }
+function unlockedRegion(region: Region) { return save.flightsCompleted >= region.unlockAt; }
 function selectedPlane() { return AIRCRAFT.find(a => a.id === save.selectedAircraft) ?? AIRCRAFT[0]; }
 function selectedRegion() { return REGIONS.find(r => r.id === save.selectedRegion) ?? REGIONS[0]; }
 function renderMenu() {
@@ -205,7 +205,7 @@ function renderMenu() {
     const selected = save.selectedRegion === r.id, unlocked = unlockedRegion(r);
     return '<button class="region-card' + (selected ? ' selected' : '') + '" data-region="' + r.id + '"' + (unlocked ? '' : ' disabled') + '><span class="region-emoji">' + r.emoji + '</span><strong>' + r.name + '</strong><small>' + (unlocked ? r.subtitle + ' · +' + r.reward + ' ✦' : r.subtitle) + '</small></button>';
   }).join('');
-  el<HTMLElement>('regionProgress').textContent = save.missions.length + ' FLIGHTS COMPLETED';
+  el<HTMLElement>('regionProgress').textContent = save.flightsCompleted + ' FLIGHTS COMPLETED';
   const cost = 80 * (save.upgrades + 1);
   upgradeCostEl.textContent = String(cost);
   upgradeDescription.textContent = 'Level ' + save.upgrades + '/10 · ' + (save.upgrades < 10 ? 'Improve speed and handling.' : 'Maximum tuning reached.');
@@ -253,7 +253,7 @@ function startFlight() {
 function returnToHangar() {
   if (inFlight) finishFlight(false);
   inFlight = false; flightHud.classList.add('hidden'); homeScreen.classList.remove('hidden');
-  aircraftRoot.position.set(0, 3, 0); camera.radius = 19; camera.setTarget(new Vector3(0, 3, 2));
+  aircraftRoot.position.set(0, 3, 0); camera.radius = 19; camera.alpha = 0; camera.setTarget(new Vector3(0, 3, 2));
   for (const ring of rings) ring.setEnabled(false);
   renderMenu();
 }
@@ -265,7 +265,7 @@ function finishFlight(completed: boolean) {
     const region = selectedRegion();
     const firstClear = !save.missions.includes(region.id);
     const reward = region.reward + Math.min(60, Math.floor(distance * 2)) + (firstClear ? 30 : 0);
-    save.coins += reward; save.missions = [...new Set([...save.missions, region.id])]; save.bestDistance = Math.max(save.bestDistance, distance);
+    save.coins += reward; save.missions = [...new Set([...save.missions, region.id])]; save.flightsCompleted++; save.bestDistance = Math.max(save.bestDistance, distance);
     persist(); renderMenu(); showToast('Mission complete! +' + reward + ' Sky Coins earned.');
   }
 }
@@ -320,7 +320,7 @@ engine.runRenderLoop(() => {
     aircraftRoot.position.z -= dt * speed;
     aircraftRoot.rotation.z = -steer * 0.42; aircraftRoot.rotation.x = lift * 0.12;
     camera.setTarget(Vector3.Lerp(camera.target, new Vector3(aircraftRoot.position.x * 0.45, aircraftRoot.position.y + 1.2, aircraftRoot.position.z + 9), 0.045));
-    camera.alpha = -Math.PI / 2 + steer * 0.08;
+    camera.alpha = steer * 0.08;
     islandRoot.position.z = Math.max(0, Math.floor(-aircraftRoot.position.z / 120) * 120) * 0.28;
     distance += dt * speed / 1000;
     for (const ring of rings) {
