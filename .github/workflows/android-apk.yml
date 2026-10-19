@@ -1,0 +1,62 @@
+name: Build Android APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: epic-airplane-free-apk-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install dependencies
+        run: npm install
+      - name: Check JavaScript syntax
+        run: node --check src/game.js
+      - name: Validate project configuration
+        run: node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); JSON.parse(require('fs').readFileSync('capacitor.config.json','utf8')); console.log('JSON configuration valid')"
+      - name: Build web game
+        run: npm run build
+      - name: Generate Android project
+        run: npx cap add android
+      - name: Sync Capacitor assets
+        run: npx cap sync android
+      - name: Build debug APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --stacktrace
+      - name: Verify APK
+        run: test -s android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload APK artifact (best effort)
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: epic-airplane-free-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 3
+      - name: Publish APK to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          NOTES="Automated APK build from commit ${GITHUB_SHA}. All five prototype missions are free."
+          if gh release view web-rebuild-latest >/dev/null 2>&1; then
+            gh release upload web-rebuild-latest "$APK" --clobber
+            gh release edit web-rebuild-latest --title "Epic Airplane Free — Rebuild APK" --notes "$NOTES"
+          else
+            gh release create web-rebuild-latest "$APK" --title "Epic Airplane Free — Rebuild APK" --notes "$NOTES" --prerelease --target "$GITHUB_SHA"
+          fi
