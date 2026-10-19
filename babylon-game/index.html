@@ -4,30 +4,58 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
     <meta name="theme-color" content="#081629" />
-    <meta name="description" content="Explore skies, collect aircraft, and complete flight missions." />
+    <meta name="description" content="Collect aircraft, upgrade your hangar, and explore new flight regions." />
     <title>Epic Airplane — Sky Frontier</title>
   </head>
   <body>
     <div id="app">
       <canvas id="renderCanvas" aria-label="3D airplane game"></canvas>
-      <div class="hud">
+      <div class="vignette"></div>
+      <main class="menu-screen" id="homeScreen">
+        <header class="brand-row">
+          <div class="brand-mark">EF</div>
+          <div><p class="eyebrow">FLIGHT EXPLORATION PROJECT</p><h1>EPIC <span>AIRPLANE</span></h1></div>
+          <div class="wallet"><span>✦</span><strong id="coins">120</strong><small>SKY COINS</small></div>
+        </header>
+        <section class="hero-copy">
+          <p class="eyebrow">YOUR NEXT HORIZON</p>
+          <h2>Every flight<br/>opens a new world.</h2>
+          <p class="subcopy">Build your fleet. Master the skies. Discover the unknown.</p>
+        </section>
+        <section class="hangar-panel">
+          <div class="section-heading"><div><p class="eyebrow">01 / HANGAR</p><h3>Choose your aircraft</h3></div><span class="micro-label">FLEET <b id="fleetCount">1/5</b></span></div>
+          <div class="aircraft-grid" id="aircraftGrid"></div>
+          <div class="section-heading region-heading"><div><p class="eyebrow">02 / FLIGHT PLAN</p><h3>Choose a region</h3></div><span class="micro-label" id="regionProgress">1 REGION AVAILABLE</span></div>
+          <div class="region-grid" id="regionGrid"></div>
+          <div class="upgrade-row">
+            <div class="upgrade-icon">↗</div><div class="upgrade-copy"><strong>Aircraft tuning</strong><small id="upgradeDescription">Increase flight speed and handling.</small></div>
+            <button id="upgradeBtn" class="secondary-button">UPGRADE · <span id="upgradeCost">80</span> ✦</button>
+          </div>
+          <button id="startMission" class="primary-button">LAUNCH MISSION <span>↗</span></button>
+          <p class="fine-print">Progress is saved on this device. Aircraft models may take a moment to load.</p>
+        </section>
+      </main>
+      <div class="hud hidden" id="flightHud">
         <header class="topbar">
-          <div><span class="eyebrow">SKY FRONTIER</span><h1>Epic Airplane</h1></div>
-          <div class="mission"><span>MISSION 01</span><strong>Island Recon</strong></div>
+          <button id="backHome" class="icon-button" aria-label="Return to hangar">←</button>
+          <div class="mission"><span id="missionRegion">REGION 01</span><strong id="missionName">Island Recon</strong></div>
+          <div class="wallet hud-wallet"><span>✦</span><strong id="hudCoins">120</strong></div>
         </header>
         <section class="stats" aria-label="Flight status">
           <div><small>ALTITUDE</small><strong id="altitude">320 m</strong></div>
           <div><small>SPEED</small><strong id="speed">145 km/h</strong></div>
-          <div><small>FLIGHT DATA</small><strong id="distance">0.0 km</strong></div>
+          <div><small>DISTANCE</small><strong id="distance">0.0 km</strong></div>
         </section>
-        <div class="hint" id="hint">Drag to steer · W/S or ↑/↓ to climb and dive</div>
+        <div class="mission-progress"><div class="progress-track"><span id="ringProgress"></span></div><small id="ringLabel">ROUTE RINGS · 0/6</small></div>
+        <div class="hint" id="hint">Drag to steer · ↑ / ↓ to climb and dive</div>
         <div class="controls">
           <button id="leftBtn" aria-label="Steer left">◀</button>
           <button id="boostBtn" aria-label="Boost flight">BOOST</button>
           <button id="rightBtn" aria-label="Steer right">▶</button>
         </div>
-        <div class="toast" id="toast" role="status">Welcome pilot — follow the route rings.</div>
+        <div class="toast" id="toast" role="status"></div>
       </div>
+      <div class="loading-overlay" id="loadingOverlay"><div class="loader"></div><strong>PREPARING FLIGHT</strong><span id="loadingText">Checking aircraft and route…</span></div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
