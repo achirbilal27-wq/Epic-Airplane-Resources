@@ -36,7 +36,7 @@ npx cap add android
 npx cap sync android
 ```
 
-An Android build/signing workflow is not yet included. The existing GitHub Actions workflow validates and uploads the production web build only.
+GitHub Actions now attempts to generate the Capacitor Android project and build a debug APK, then uploads it as an artifact. This CI build is unsigned for Play Store release; check the workflow result before treating the APK as ready.
 
 ## Original models and limitations
 The original GLB assets remain in the Unity project and are loaded at runtime from GitHub's raw file host. First load requires internet access; large models may take time to download. Verify asset licensing and attribution before distributing a public build.
